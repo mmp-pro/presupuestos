@@ -528,10 +528,16 @@
       const piezas = parseInt(document.getElementById('articuloPiezas').value) || 1;
       const precioUnitario = piezas > 0 ? (costo * piezas).toFixed(4) : 0;
       document.getElementById('articuloPrecioUnitario').value = precioUnitario > 0 ? '$' + precioUnitario : '—';
-      
+
+      // Auto-llenar costo por bolsa con el costo total si está vacío o igual
+      const campoCostoBolsa = document.getElementById('costoPorBolsa');
+      if (costo > 0) {
+        campoCostoBolsa.value = costo.toFixed(2);
+      }
+
       // Costo por pieza desde bolsa
       const piezasPorBolsa = parseInt(document.getElementById('piezasPorBolsa').value) || 0;
-      const costoPorBolsa = parseFloat(document.getElementById('costoPorBolsa').value) || 0;
+      const costoPorBolsa = parseFloat(campoCostoBolsa.value) || 0;
       const costoPorPiezaBolsa = piezasPorBolsa > 0 ? (costoPorBolsa / piezasPorBolsa).toFixed(4) : 0;
       document.getElementById('costoPorPiezaBolsa').value = costoPorPiezaBolsa > 0 ? '$' + costoPorPiezaBolsa : '—';
     }
