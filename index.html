@@ -1,443 +1,3 @@
-
-Claude terminó la respuesta
-Dijiste: crea una app para ingresar articulos para poder sacar un presupesto , es decir la app tiene que
-crea una app para ingresar articulos para poder sacar un presupesto , es decir la app tiene que 
-
-ingresar articulo , precio venta (costo), piezas compradas ó pieza , despues sacar el costo por unidad con los datos capturados , todo eso se vaya llenando en una sheets en google , para poder ir llevando el control de los articulos compradas y poder sacar sus precios unitarios crea el proyecto y dame un ejemplo de como quedaria
-
-25 abr
-Claude respondió: Aquí va la app completa.
-
-Ideó solución para integrar Google Apps Script con Sheets
-Ideó solución para integrar Google Apps Script con Sheets
-Aquí va la app completa. Te construyo el componente React con toda la lógica, más el código de Google Apps Script que necesitas para conectar con tu hoja:
-
-V
-
-Conectando a visualize...
-Ahí tienes la app funcionando con datos de ejemplo. Ahora el código para conectarla con Google Sheets:
-
-Configuración de Google Sheets (Apps Script)
-Paso 1 — Crea la hoja de cálculo
-Abre sheets.google.com, crea una hoja nueva y ponle el nombre que quieras. En la fila 1 agrega estos encabezados:
-
-A	B	C	D	E
-Artículo	Costo Total	Piezas	Precio Unitario	Fecha
-Paso 2 — Agrega el Apps Script
-En tu hoja ve a Extensiones → Apps Script y reemplaza todo el código con esto:
-
-javascript
-const SHEET_NAME = "Hoja1"; // Cambia si tu hoja tiene otro nombre
-
-function doPost(e) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEET_NAME);
-    const data = JSON.parse(e.postData.contents);
-
-    data.articulos.forEach(a => {
-      sheet.appendRow([
-        a.nombre,
-        a.costoTotal,
-        a.piezas,
-        a.precioUnitario,
-        a.fecha
-      ]);
-    });
-
-    return ContentService
-      .createTextOutput("OK")
-      .setMimeType(ContentService.MimeType.TEXT);
-
-  } catch(err) {
-    return ContentService
-      .createTextOutput("ERROR: " + err.message)
-      .setMimeType(ContentService.MimeType.TEXT);
-  }
-}
-Paso 3 — Despliega como Web App
-Clic en Implementar → Nueva implementación
-Tipo: Aplicación web
-Ejecutar como: Yo
-Quién tiene acceso: Cualquier usuario (o "Cualquier usuario, incluso anónimo")
-Clic en Implementar → copia la URL que te da
-Paso 4 — Conecta la app
-En la app de arriba, haz clic en Configurar Sheets, pega la URL del paso anterior y listo. Cada vez que presiones Sincronizar con Google Sheets todos los artículos de la lista se agregan a tu hoja automáticamente.
-
-Funcionalidades incluidas en la app:
-
-Captura artículo, costo total y número de piezas
-Calcula precio unitario al instante mientras escribes
-Detecta automáticamente si es compra por lote o pieza individual
-Métricas: total artículos, total piezas e inversión acumulada
-Eliminación por fila y limpieza total
-Sincronización directa a Google Sheets vía Apps Script
-Dijiste: ahora como puedo bajar la app para ejecutarla y/o ponerla en un carpeta local
-ahora como puedo bajar la app para ejecutarla y/o ponerla en un carpeta local
-
-25 abr
-Claude respondió: Te genero un archivo HTML standalone que puedes abrir directo en cualquier navegador, sin instalar nada: Descarga el archivo y así lo usas localmente:
-
-Ideó crear archivo HTML independiente para ejecución local
-Ideó crear archivo HTML independiente para ejecución local
-Te genero un archivo HTML standalone que puedes abrir directo en cualquier navegador, sin instalar nada:
-
-
-Creó un archivo, archivo leído
-Creó un archivo, archivo leído
-Descarga el archivo y así lo usas localmente:
-
-Para ejecutarla:
-
-Descarga presupuesto-app.html con el botón de arriba
-Guárdala en cualquier carpeta de tu computadora
-Doble clic → se abre directo en Chrome, Edge o Firefox
-No necesita servidor, no necesita instalar nada
-Lo que incluye esta versión local vs el demo:
-
-Soporte completo de modo oscuro automático (detecta el tema del sistema)
-Funciona 100% offline, solo necesita internet para sincronizar con Sheets
-Campo URL del Apps Script se guarda mientras la página está abierta
-Enter en el campo "Piezas" agrega el artículo directamente
-Todo el código en un solo archivo, fácil de respaldar o compartir
-
-Presupuesto app
-Código · HTML 
-Dijiste: REVISA PORQUE NO SE CONECTA
-1777153643616_image.png
-1777153700722_image.png
-1777153717108_image.png
-REVISA PORQUE NO SE CONECTA
-
-25 abr
-Claude respondió: Veo el problema.
-
-Diagnosticó problema CORS y formuló soluciones técnicas
-Diagnosticó problema CORS y formuló soluciones técnicas
-Veo el problema. Todo está bien configurado del lado de Google, pero el fallo es de CORS — cuando el fetch envía JSON desde un archivo local, el navegador bloquea la respuesta del Apps Script. La solución es agregar mode: 'no-cors' al fetch y ajustar el script. Dame un momento:
-
-
-Vio 3 archivos, editó un archivo
-Vio 3 archivos, editó un archivo
-Ahora actualizo también el Apps Script para que lea e.parameter.data en lugar de e.postData.contents:
-
-
-Presented file
-Presented file
-El problema era CORS. Cuando el navegador hace un fetch POST con JSON, primero manda una petición "preflight" de verificación que Google Apps Script no sabe responder, y el navegador bloquea todo.
-
-Descarga el HTML corregido arriba y también actualiza tu Apps Script con este código nuevo:
-javascript
-const SHEET_NAME = "presupuestos"; // nombre exacto de tu pestaña
-
-function doPost(e) {
-  try {
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEET_NAME);
-
-    // Ahora leemos de e.parameter.data (form-urlencoded)
-    const raw  = e.parameter.data;
-    const data = JSON.parse(raw);
-
-    data.articulos.forEach(a => {
-      sheet.appendRow([
-        a.nombre,
-        a.costoTotal,
-        a.piezas,
-        a.precioUnitario,
-        a.fecha
-      ]);
-    });
-
-    return ContentService
-      .createTextOutput("OK")
-      .setMimeType(ContentService.MimeType.TEXT);
-
-  } catch(err) {
-    return ContentService
-      .createTextOutput("ERROR: " + err.message)
-      .setMimeType(ContentService.MimeType.TEXT);
-  }
-}
-Después de pegar el código nuevo en Apps Script, ve a Implementar → Administrar implementaciones → lápiz (editar) → Nueva versión → Implementar. Con la misma URL que ya tienes debería funcionar.
-
-
-Presupuesto app
-Código · HTML 
-Dijiste: revisa porque no sincroniza nada , ya die que se sincronizo pero en el archivo de sheets no hay nada de datos guardados
-1777154074232_image.png
-1777154090631_image.png
-1777154129612_image.png
-1777154213865_image.png
-revisa porque no sincroniza nada , ya die que se sincronizo pero en el archivo de sheets no hay nada de datos guardados
-
-25 abr
-Claude respondió: Veo el problema.
-
-Identificó problema de redeployment y formuló solución alternativa
-Identificó problema de redeployment y formuló solución alternativa
-Veo el problema. Dice "¡Sincronizado!" pero con no-cors el navegador nunca puede saber si falló — siempre reporta éxito aunque el script no haya recibido nada. La solución real es usar GET en lugar de POST, que no tiene restricciones CORS en absoluto. Actualizo ambos:
-
-
-Editó un archivo, archivo visualizado, ejecutó un comando
-Editó un archivo, archivo visualizado, ejecutó un comando
-Descarga el HTML actualizado. Ahora también debes actualizar el Apps Script — reemplaza todo con este código nuevo que usa doGet en lugar de doPost:
-
-javascript
-const SHEET_NAME = "presupuestos";
-
-function doGet(e) {
-  try {
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEET_NAME);
-
-    const raw  = e.parameter.data;
-    const articulos = JSON.parse(raw);
-
-    articulos.forEach(a => {
-      sheet.appendRow([
-        a.nombre,
-        a.costoTotal,
-        a.piezas,
-        a.precioUnitario,
-        a.fecha
-      ]);
-    });
-
-    return ContentService
-      .createTextOutput("OK")
-      .setMimeType(ContentService.MimeType.TEXT);
-
-  } catch(err) {
-    return ContentService
-      .createTextOutput("ERROR: " + err.message)
-      .setMimeType(ContentService.MimeType.TEXT);
-  }
-}
-Después de pegarlo, esto es crítico: ve a Implementar → Administrar implementaciones → ícono del lápiz (editar) → cambia la versión a "Nueva versión" → Implementar. Sin ese paso el script sigue corriendo el código viejo aunque lo hayas editado.
-
-Resumen de qué estaba fallando:
-
-Problema	Causa
-Decía "¡Sincronizado!" pero nada llegaba	mode: no-cors hace que el fetch siempre "funcione" aunque el servidor falle — nunca hay error
-Los datos no llegaban al script	El script nuevo no estaba desplegado como versión nueva
-Solución final	Usar GET en vez de POST — sin CORS, la respuesta es legible y se puede detectar si falló
-
-Presupuesto app
-Código · HTML 
-1777154581208_image.png
-25 abr
-Claude respondió: ¡Lo veo claramente!
-
-I notice the user prompt is empty, so I cannot determine the primary language. However, based on the thinking block which is in English, here is my summary: Identified URL configuration error requiring endpoint modification
-I notice the user prompt is empty, so I cannot determine the primary language. However, based on the thinking block which is in English, here is my summary: Identified URL configuration error requiring endpoint modification
-¡Lo veo claramente! La URL termina en /dev — esa es la URL de prueba que solo funciona si estás logueado en Google. Necesitas la URL que termina en /exec.
-
-Cambia la URL así:
-
-// ❌ Incorrecta (la que tienes)
-https://script.google.com/macros/s/AKfycbzz.../dev
-
-// ✅ Correcta
-https://script.google.com/macros/s/AKfycbzz.../exec
-Solo edita el campo de la URL en la app y reemplaza /dev por /exec al final. Esa URL /exec la encuentras en Apps Script en Implementar → Administrar implementaciones — ahí aparece como "URL de la app web".
-
-Dijiste: pero como hago para que el script me de la liga bien
-pero como hago para que el script me de la liga bien 
-
-https://script.google.com/macros/s/AKfycbyke--zQnx5EBMGZIEE0LoM8Ty9DH_W5HaUwFzIIHUSLMXA_2NvqrnmF4f62mKWO9M/exec
-
-25 abr
-Claude respondió: ¡Ya la tienes!
-
-Verificó que el usuario ya posee la URL correcta
-Verificó que el usuario ya posee la URL correcta
-¡Ya la tienes! Esa URL que escribiste ya es la correcta — termina en /exec ✓
-
-https://script.google.com/macros/s/AKfycbyke--zQnx5EBMG.../exec
-El problema fue que en la última prueba usaste la URL del script nuevo (AKfycbzz.../dev), cuando debías seguir usando la del primer despliegue (AKfycbyke.../exec).
-
-Pasos para que funcione ahora mismo:
-
-Abre tu Apps Script → reemplaza el código por el doGet que te di antes
-Ve a Implementar → Administrar implementaciones
-Clic en el lápiz (editar) de la implementación AKfycbyke...
-Cambia versión a "Nueva versión"
-Clic Implementar — la URL ...exec se mantiene igual
-Después pega esa URL /exec en la app y sincroniza. Ya debería funcionar.
-
-Dijiste: sigue sin funcionar
-sigue sin funcionar
-
-25 abr
-Claude respondió: Vamos a diagnosticar paso a paso.
-
-Diagnosticó problemas de permisos y pasos de depuración
-Diagnosticó problemas de permisos y pasos de depuración
-Vamos a diagnosticar paso a paso. Primero prueba directamente en el navegador pegando esta URL (con tu ID real):
-
-https://script.google.com/macros/s/AKfycbyke--zQnx5EBMGZIEE0LoM8Ty9DH_W5HaUwFzIIHUSLMXA_2NvqrnmF4f62mKWO9M/exec?data=[{"nombre":"test","costoTotal":10,"piezas":1,"precioUnitario":10,"fecha":"25/04/2026"}]
-¿Qué ves en pantalla? ¿Dice OK, un error, o te pide login?
-
-Mientras tanto revisa estas 3 cosas en tu Apps Script:
-
-1. Permisos — el más común
-
-Ve a Implementar → Administrar implementaciones → lápiz y verifica que diga exactamente esto:
-
-Ejecutar como: Yo
-Quién tiene acceso: Cualquier usuario ← si dice "Solo yo" o "Usuarios de Google" no funciona desde un archivo local
-2. Registro de ejecución
-
-En el Apps Script ve a Registros de ejecución (menú izquierdo, ícono de reloj). ¿Aparece algún intento de llamada? ¿Hay errores?
-
-3. Prueba el script manualmente
-
-Agrega esta función temporal y ejecútala con el botón ▶ Ejecutar:
-
-javascript
-function testManual() {
-  const ss    = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("presupuestos");
-  sheet.appendRow(["TEST", 99, 1, 99, "25/04/2026"]);
-}
-Si esto sí escribe en la hoja, el script funciona y el problema es solo de permisos de la Web App. Dime qué resultado obtienes en cada paso y lo resolvemos.
-
-Dijiste: con ese script si pego los datos en la hoja de sheets
-con ese script si pego los datos en la hoja de sheets
-
-25 abr
-Claude respondió: Perfecto, eso confirma que el script funciona bien.
-
-Identificó problema de permisos en la implementación web
-Identificó problema de permisos en la implementación web
-Perfecto, eso confirma que el script funciona bien. El problema es 100% de permisos de la Web App. Haz esto:
-
-En Apps Script → Implementar → Administrar implementaciones → lápiz ✏️
-
-Verifica que diga exactamente así:
-
-Ejecutar como: Yo (tu correo)
-Quién tiene acceso: Cualquier usuario ← este es el que falla seguramente
-Si dice "Solo yo" o "Usuarios de Google Workspace", cámbialo a "Cualquier usuario" y da clic en Implementar.
-
-Después de cambiarlo, Google te va a pedir que autorices los permisos por primera vez — aparece una pantalla así:
-
-Clic en "Revisar permisos"
-Selecciona tu cuenta de Google
-Aparece aviso de "app no verificada" → clic en "Configuración avanzada" → "Ir a presupuestos (no seguro)"
-Clic en "Permitir"
-Una vez que autorices, prueba de nuevo en la app. ¿Cómo tienes configurado el "Quién tiene acceso" actualmente?
-
-1777156155072_image.png
-25 abr
-Claude respondió: ¡Ahí está el problema!
-
-Diagnosed deployment issue requiring code refresh and redeployment
-Diagnosed deployment issue requiring code refresh and redeployment
-¡Ahí está el problema! El script desplegado todavía tiene el código viejo (doPost). El código nuevo con doGet no se ha guardado/desplegado. Haz esto:
-
-Paso 1 — Guarda el código nuevo
-
-En el editor de Apps Script, asegúrate que el código sea exactamente este y presiona Ctrl+S:
-
-javascript
-const SHEET_NAME = "presupuestos";
-
-function doGet(e) {
-  try {
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEET_NAME);
-    const raw   = e.parameter.data;
-    const articulos = JSON.parse(raw);
-
-    articulos.forEach(a => {
-      sheet.appendRow([
-        a.nombre,
-        a.costoTotal,
-        a.piezas,
-        a.precioUnitario,
-        a.fecha
-      ]);
-    });
-
-    return ContentService
-      .createTextOutput("OK")
-      .setMimeType(ContentService.MimeType.TEXT);
-
-  } catch(err) {
-    return ContentService
-      .createTextOutput("ERROR: " + err.message)
-      .setMimeType(ContentService.MimeType.TEXT);
-  }
-}
-Paso 2 — Redespliega con versión nueva
-
-Implementar → Administrar implementaciones
-Clic en el lápiz ✏️
-En "Versión" selecciona "Nueva versión" ← esto es clave
-Clic Implementar
-Paso 3 — Verifica
-
-Vuelve a pegar la URL de prueba en el navegador. Ahora debe decir OK en vez del error.
-
-El error que ves es porque aunque edites el código, si no creas una nueva versión al desplegar, Google sigue ejecutando el código anterior congelado.
-
-Dijiste: ya probe con ambos codigos y nada
-ya probe con ambos codigos y nada
-
-25 abr
-Claude respondió: El problema es que estás editando el despliegue viejo.
-
-Investigó problemas de despliegue y versionado en Apps Script
-Investigó problemas de despliegue y versionado en Apps Script
-El problema es que estás editando el despliegue viejo. Vamos a crear uno completamente nuevo desde cero:
-
-En Apps Script haz esto:
-
-Menú Implementar → Nueva implementación (no "Administrar", sino Nueva)
-Clic en el engrane ⚙️ → Aplicación web
-Configura así:
-Descripción: presupuestos2
-Ejecutar como: Yo
-Quién tiene acceso: Cualquier usuario
-Clic Implementar
-Autoriza los permisos cuando te lo pida
-Copia la URL nueva que termina en /exec
-Esto te dará una URL completamente nueva. Pégala en la app y prueba. La URL anterior ya no la uses.
-
-¿Cuándo haces "Administrar implementaciones → lápiz → Nueva versión", el botón dice exactamente "Implementar" o dice "Guardar"? Porque si dice "Guardar" no está redeployando, solo guarda cambios sin actualizar la Web App.
-
-Dijiste: pudes revisar la formula de esta seccion , ya que no l esta calculando bien es decir debe de multiplicar la cantidad de costo x las piezas o cantidad comprada …
-1777503601034_image.png
-pudes revisar la formula de esta seccion , ya que no l esta calculando bien es decir debe de multiplicar la cantidad de costo x las piezas o cantidad comprada , si te das cuenta lo esta dividiendo
-
-17:00
-Claude respondió: Claro, el cambio es simple — está dividiendo (precio / cantidad) cuando debe multiplicar (precio * cantidad).
-
-Identificó error de fórmula y planificó cambiar división por multiplicación
-Identificó error de fórmula y planificó cambiar división por multiplicación
-Claro, el cambio es simple — está dividiendo (precio / cantidad) cuando debe multiplicar (precio * cantidad). Lo corrijo:
-
-
-Vio 2 archivos, ejecutó un comando, archivo leído
-Vio 2 archivos, ejecutó un comando, archivo leído
-Listo, descarga el HTML actualizado. Ahora con tu ejemplo:
-
-Costo: $19 × Piezas: 3 = $57.0000 ✓
-El cambio fue en dos lugares: el preview en tiempo real mientras escribes, y el cálculo que se guarda al agregar el artículo.
-
-
-Presupuesto app
-Código · HTML 
-
-
-
-
-Claude es IA y puede cometer errores. Por favor, verifica nuevamente las respuestas.
-Presupuesto app · HTML
-Copiar
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -446,7 +6,7 @@ Copiar
   <title>PresupuestoApp — Control de artículos</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
- 
+
     :root {
       --bg: #f5f4f0;
       --surface: #ffffff;
@@ -466,7 +26,7 @@ Copiar
       --red-bg: #FCEBEB; --red-text: #A32D2D;
       --ok-bg: #EAF3DE; --ok-text: #3B6D11;
     }
- 
+
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #1c1c1a;
@@ -484,7 +44,7 @@ Copiar
         --ok-bg: #142810; --ok-text: #97C459;
       }
     }
- 
+
     body {
       font-family: -apple-system, 'Segoe UI', sans-serif;
       background: var(--bg);
@@ -492,9 +52,9 @@ Copiar
       min-height: 100vh;
       padding: 2rem 1rem;
     }
- 
+
     .container { max-width: 860px; margin: 0 auto; }
- 
+
     /* Header */
     .header {
       display: flex; align-items: center;
@@ -509,7 +69,7 @@ Copiar
     .logo-box svg { width: 20px; height: 20px; fill: white; }
     .logo-title { font-size: 17px; font-weight: 600; color: var(--text); }
     .logo-sub { font-size: 12px; color: var(--text2); }
- 
+
     .config-btn {
       font-size: 13px; color: var(--text2); cursor: pointer;
       padding: 7px 14px; border: 0.5px solid var(--border2);
@@ -517,7 +77,7 @@ Copiar
       display: flex; align-items: center; gap: 6px;
     }
     .config-btn:hover { background: var(--surface2); }
- 
+
     /* Config panel */
     .config-panel {
       background: var(--surface2); border: 0.5px solid var(--border);
@@ -536,7 +96,7 @@ Copiar
     }
     .config-input:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 2px rgba(186,117,23,0.15); }
     .config-hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
- 
+
     /* Form card */
     .form-card {
       background: var(--surface); border: 0.5px solid var(--border);
@@ -564,7 +124,7 @@ Copiar
     }
     .field input:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 2px rgba(186,117,23,0.15); }
     .field input::placeholder { color: var(--text3); }
- 
+
     .unit-preview {
       background: var(--surface2); border: 0.5px solid var(--border);
       border-radius: var(--radius-md); padding: 9px 12px;
@@ -572,7 +132,7 @@ Copiar
     }
     .unit-value { font-size: 16px; font-weight: 600; color: var(--amber); }
     .unit-label { font-size: 11px; color: var(--text3); margin-top: 1px; }
- 
+
     .form-footer { display: flex; justify-content: flex-end; margin-top: 14px; }
     .add-btn {
       padding: 9px 20px; background: var(--amber); color: white;
@@ -582,7 +142,7 @@ Copiar
     }
     .add-btn:hover { background: var(--amber-dark); }
     .add-btn:active { transform: scale(0.97); }
- 
+
     /* Totals */
     .totals-row {
       display: grid; grid-template-columns: repeat(3,1fr);
@@ -595,7 +155,7 @@ Copiar
     .metric-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; font-weight: 600; }
     .metric-val { font-size: 22px; font-weight: 600; color: var(--text); }
     .metric-val.amber { color: var(--amber); }
- 
+
     /* Table */
     .table-section { margin-bottom: 1.25rem; }
     .table-header {
@@ -627,18 +187,18 @@ Copiar
     .td-center { text-align: center; }
     .precio-unit { font-weight: 600; color: var(--amber-dark); }
     .empty-state { padding: 3rem; text-align: center; color: var(--text3); font-size: 13px; }
- 
+
     .del-btn {
       background: none; border: none; cursor: pointer;
       color: var(--text3); padding: 3px 6px;
       border-radius: 4px; font-size: 14px;
     }
     .del-btn:hover { color: var(--red-text); background: var(--red-bg); }
- 
+
     .tipo-badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
     .tipo-lote { background: var(--blue-bg); color: var(--blue-text); }
     .tipo-pieza { background: var(--green-bg); color: var(--green-text); }
- 
+
     /* Actions */
     .actions-row {
       display: none; flex-wrap: wrap;
@@ -659,7 +219,7 @@ Copiar
       border-radius: var(--radius-md); font-size: 13px; cursor: pointer;
     }
     .clear-btn:hover { background: var(--surface2); }
- 
+
     .status-msg {
       font-size: 12px; padding: 6px 12px;
       border-radius: var(--radius-md); display: none;
@@ -667,7 +227,7 @@ Copiar
     .status-ok  { background: var(--ok-bg);  color: var(--ok-text); }
     .status-err { background: var(--red-bg); color: var(--red-text); }
     .status-sending { background: var(--amber-light); color: var(--amber-dark); }
- 
+
     /* Toast */
     .toast {
       position: fixed; bottom: 24px; right: 24px;
@@ -685,7 +245,7 @@ Copiar
 </head>
 <body>
 <div class="container">
- 
+
   <!-- Header -->
   <div class="header">
     <div class="logo">
@@ -702,7 +262,7 @@ Copiar
       Configurar Sheets
     </button>
   </div>
- 
+
   <!-- Config panel -->
   <div class="config-panel" id="config-panel">
     <div class="config-label">URL del Apps Script (Web App de Google)</div>
@@ -710,7 +270,7 @@ Copiar
       placeholder="https://script.google.com/macros/s/AKfy.../exec" />
     <div class="config-hint">Despliega tu Apps Script como Web App y pega aquí la URL generada.</div>
   </div>
- 
+
   <!-- Formulario -->
   <div class="form-card">
     <div class="form-title">Agregar artículo</div>
@@ -744,7 +304,7 @@ Copiar
       </button>
     </div>
   </div>
- 
+
   <!-- Métricas -->
   <div class="totals-row" id="totals-row">
     <div class="metric">
@@ -760,7 +320,7 @@ Copiar
       <div class="metric-val amber" id="m-inversion">$0.00</div>
     </div>
   </div>
- 
+
   <!-- Tabla -->
   <div class="table-section">
     <div class="table-header">
@@ -789,7 +349,7 @@ Copiar
       </table>
     </div>
   </div>
- 
+
   <!-- Acciones -->
   <div class="actions-row" id="actions-row">
     <button class="sync-btn" id="sync-btn" onclick="sincronizarSheets()">
@@ -799,17 +359,17 @@ Copiar
     <button class="clear-btn" onclick="limpiarTodo()">Limpiar todo</button>
     <span class="status-msg" id="status-msg"></span>
   </div>
- 
+
 </div><!-- /container -->
- 
+
 <script>
   let articulos = [];
- 
+
   /* --- Config panel --- */
   function toggleConfig() {
     document.getElementById('config-panel').classList.toggle('open');
   }
- 
+
   /* --- Cálculo unitario en tiempo real --- */
   function calcUnit() {
     const precio = parseFloat(document.getElementById('f-precio').value) || 0;
@@ -821,16 +381,16 @@ Copiar
   }
   document.getElementById('f-precio').addEventListener('input', calcUnit);
   document.getElementById('f-cantidad').addEventListener('input', calcUnit);
- 
+
   /* --- Agregar artículo --- */
   function agregarArticulo() {
     const nombre = document.getElementById('f-nombre').value.trim();
     const precio = parseFloat(document.getElementById('f-precio').value);
     const cant   = parseInt(document.getElementById('f-cantidad').value) || 1;
- 
+
     if (!nombre)         { toast('Ingresa el nombre del artículo'); return; }
     if (!precio || precio <= 0) { toast('Ingresa un costo válido'); return; }
- 
+
     articulos.push({
       id: Date.now() + Math.random(),
       nombre,
@@ -839,54 +399,54 @@ Copiar
       unitario: precio * cant,
       fecha: new Date().toLocaleDateString('es-MX')
     });
- 
+
     document.getElementById('f-nombre').value  = '';
     document.getElementById('f-precio').value  = '';
     document.getElementById('f-cantidad').value = '1';
     document.getElementById('unit-val').textContent = '—';
     document.getElementById('f-nombre').focus();
- 
+
     renderTabla();
     toast('Artículo agregado ✓');
   }
- 
+
   /* Agregar con Enter */
   document.getElementById('f-cantidad').addEventListener('keydown', e => {
     if (e.key === 'Enter') agregarArticulo();
   });
- 
+
   /* --- Eliminar artículo --- */
   function eliminar(id) {
     articulos = articulos.filter(a => a.id !== id);
     renderTabla();
   }
- 
+
   /* --- Render tabla --- */
   function renderTabla() {
     const tbody   = document.getElementById('tabla-body');
     const badge   = document.getElementById('count-badge');
     const totals  = document.getElementById('totals-row');
     const actions = document.getElementById('actions-row');
- 
+
     badge.textContent = articulos.length + ' artículo' + (articulos.length !== 1 ? 's' : '');
- 
+
     if (articulos.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Agrega tu primer artículo para comenzar</td></tr>';
       totals.style.display  = 'none';
       actions.style.display = 'none';
       return;
     }
- 
+
     totals.style.display  = 'grid';
     actions.style.display = 'flex';
- 
+
     let totalInv = 0, totalPzas = 0;
     articulos.forEach(a => { totalInv += a.precio; totalPzas += a.cantidad; });
- 
+
     document.getElementById('m-total-art').textContent  = articulos.length;
     document.getElementById('m-total-pzas').textContent = totalPzas.toLocaleString('es-MX');
     document.getElementById('m-inversion').textContent  = '$' + totalInv.toFixed(2);
- 
+
     tbody.innerHTML = articulos.map(a => `
       <tr>
         <td title="${a.nombre}">${a.nombre}</td>
@@ -904,7 +464,7 @@ Copiar
       </tr>
     `).join('');
   }
- 
+
   /* --- Sincronizar con Google Sheets --- */
   async function sincronizarSheets() {
     const url = document.getElementById('sheets-url').value.trim();
@@ -913,11 +473,11 @@ Copiar
       document.getElementById('config-panel').classList.add('open');
       return;
     }
- 
+
     const btn = document.getElementById('sync-btn');
     btn.disabled = true;
     mostrarStatus('Sincronizando…', 'sending');
- 
+
     try {
       const payload = articulos.map(a => ({
         nombre:         a.nombre,
@@ -926,13 +486,13 @@ Copiar
         precioUnitario: parseFloat(a.unitario.toFixed(4)),
         fecha:          a.fecha
       }));
- 
+
       /* GET no dispara CORS preflight — la respuesta se puede leer
          normalmente. Esto es la forma mas confiable con Apps Script. */
       const getUrl = url + '?data=' + encodeURIComponent(JSON.stringify(payload));
       const res    = await fetch(getUrl);
       const txt    = await res.text();
- 
+
       if (txt.includes('OK')) {
         mostrarStatus('¡Sincronizado con Google Sheets!', 'ok');
         toast('Datos enviados a Sheets ✓');
@@ -943,10 +503,10 @@ Copiar
     } catch (e) {
       mostrarStatus('Error de red: ' + e.message, 'err');
     }
- 
+
     btn.disabled = false;
   }
- 
+
   /* --- Limpiar todo --- */
   function limpiarTodo() {
     if (articulos.length === 0) return;
@@ -955,7 +515,7 @@ Copiar
       renderTabla();
     }
   }
- 
+
   /* --- Status bar --- */
   function mostrarStatus(msg, tipo) {
     const el = document.getElementById('status-msg');
@@ -964,7 +524,7 @@ Copiar
     el.textContent = msg;
     if (tipo === 'ok') setTimeout(() => { el.style.display = 'none'; }, 5000);
   }
- 
+
   /* --- Toast --- */
   let toastTimer;
   function toast(msg) {
