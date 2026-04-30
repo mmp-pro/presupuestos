@@ -657,9 +657,9 @@
       document.getElementById('inversionTotal').textContent = '$' + inversionTotal.toFixed(2);
     }
 
-function sincronizarConSheets() {
+async function sincronizarConSheets() {
   const scriptURL = document.getElementById('appsScriptUrl').value.trim();
-  
+
   if (!scriptURL) {
     alert('⚠️ Por favor configura la URL del Apps Script primero');
     return;
@@ -670,44 +670,31 @@ function sincronizarConSheets() {
     return;
   }
 
-  const datos = {
-    articulos: articulos,
-    fecha: new Date().toLocaleDateString('es-ES')
-  };
-
   const btnSincronizar = document.querySelector('button[onclick="sincronizarConSheets()"]');
-  const textoOriginal = btnSincronizar.textContent;
+  const textoOriginal  = btnSincronizar.textContent;
   btnSincronizar.textContent = '⏳ Sincronizando...';
   btnSincronizar.disabled = true;
 
-  fetch(scriptURL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {
-      'Content-Type': 'text/plain'
-    },
-    body: JSON.stringify(datos)
-  })
-  .then(response => {
-    // Con no-cors, la respuesta es "opaque" pero si llega aquí, se envió
-    console.log('Respuesta recibida:', response.type);
-    return Promise.resolve('enviado');
-  })
-  .then(() => {
-    // Esperar un momento para asegurar que Google Sheets procesó los datos
-    setTimeout(() => {
+  try {
+    // GET no tiene restricciones CORS con Apps Script
+    const getURL = scriptURL + '?data=' + encodeURIComponent(JSON.stringify(articulos));
+    const res    = await fetch(getURL);
+    const txt    = await res.text();
+
+    if (txt.includes('OK')) {
       alert('✅ Datos sincronizados correctamente con Google Sheets');
       limpiarTodo();
-    }, 1000);
-  })
-  .catch(error => {
+    } else {
+      alert('❌ Error del script: ' + txt.substring(0, 150));
+      console.error('Apps Script respondió:', txt);
+    }
+  } catch (error) {
     console.error('Error completo:', error);
     alert('❌ Error al sincronizar: ' + error.message);
-  })
-  .finally(() => {
+  } finally {
     btnSincronizar.textContent = textoOriginal;
     btnSincronizar.disabled = false;
-  });
+  }
 }    
 
     function limpiarTodo() {
