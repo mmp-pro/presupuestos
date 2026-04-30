@@ -445,6 +445,11 @@
           <input type="text" id="costoPorPiezaBolsa" placeholder="—" readonly>
           <small>calculado automáticamente</small>
         </div>
+        <div class="form-group">
+          <label>Total piezas compradas</label>
+          <input type="text" id="totalPiezasCompradas" placeholder="—" readonly>
+          <small>piezas × piezas/bolsa</small>
+        </div>
         <button class="btn btn-primary" onclick="agregarArticulo()">+ Agregar artículo</button>
       </div>
     </div>
@@ -486,13 +491,14 @@
             <th>Precio unitario</th>
             <th>Piezas/bolsa</th>
             <th>Costo/pieza (bolsa)</th>
-            <th>Costo Unitario</th>
-            <th>Fecha de Registro</th>
+            <th>Total piezas compradas</th>
+            <th>Tipo</th>
+            <th>Acción</th>
           </tr>
         </thead>
         <tbody id="tablaArticulos">
           <tr class="empty-state">
-            <td colspan="9">Agrega tu primer artículo para comenzar</td>
+            <td colspan="10">Agrega tu primer artículo para comenzar</td>
           </tr>
         </tbody>
       </table>
@@ -540,6 +546,10 @@
       const costoPorBolsa = parseFloat(campoCostoBolsa.value) || 0;
       const costoPorPiezaBolsa = piezasPorBolsa > 0 ? (costoPorBolsa / piezasPorBolsa).toFixed(4) : 0;
       document.getElementById('costoPorPiezaBolsa').value = costoPorPiezaBolsa > 0 ? '$' + costoPorPiezaBolsa : '—';
+
+      // Total piezas compradas = piezas × piezas por bolsa
+      const totalPiezasComp = (piezas > 0 && piezasPorBolsa > 0) ? piezas * piezasPorBolsa : 0;
+      document.getElementById('totalPiezasCompradas').value = totalPiezasComp > 0 ? totalPiezasComp : '—';
     }
 
     function agregarArticulo() {
@@ -551,6 +561,7 @@
       const piezasPorBolsa = parseInt(document.getElementById('piezasPorBolsa').value) || 0;
       const costoPorBolsa = parseFloat(document.getElementById('costoPorBolsa').value) || 0;
       const costoPorPiezaBolsa = piezasPorBolsa > 0 ? (costoPorBolsa / piezasPorBolsa).toFixed(4) : 0;
+      const totalPiezasCompradas = (piezas > 0 && piezasPorBolsa > 0) ? piezas * piezasPorBolsa : 0;
 
       if (!nombre) {
         alert('⚠️ Por favor ingresa el nombre del artículo');
@@ -566,7 +577,8 @@
         precioUnitario: parseFloat(precioUnitario),
         piezasPorBolsa: piezasPorBolsa,
         costoPorBolsa: costoPorBolsa,
-        costoPorPiezaBolsa: parseFloat(costoPorPiezaBolsa) || 0
+        costoPorPiezaBolsa: parseFloat(costoPorPiezaBolsa) || 0,
+        totalPiezasCompradas: totalPiezasCompradas
       });
 
       // Limpiar formulario
@@ -578,6 +590,7 @@
       document.getElementById('piezasPorBolsa').value = '';
       document.getElementById('costoPorBolsa').value = '';
       document.getElementById('costoPorPiezaBolsa').value = '';
+      document.getElementById('totalPiezasCompradas').value = '';
 
       actualizarTabla();
       actualizarTotales();
@@ -591,7 +604,7 @@
       if (articulos.length === 0) {
         tbody.innerHTML = `
           <tr class="empty-state">
-            <td colspan="9">Agrega tu primer artículo para comenzar</td>
+            <td colspan="10">Agrega tu primer artículo para comenzar</td>
           </tr>
         `;
         document.getElementById('contadorArticulos').textContent = '0 artículos';
@@ -609,6 +622,7 @@
             <td>$${art.precioUnitario.toFixed(4)}</td>
             <td>${tieneBolsa ? art.piezasPorBolsa : '—'}</td>
             <td>${tieneBolsa ? '$' + art.costoPorPiezaBolsa.toFixed(4) : '—'}</td>
+            <td>${tieneBolsa && art.totalPiezasCompradas > 0 ? art.totalPiezasCompradas : '—'}</td>
             <td>
               ${tieneBolsa 
                 ? '<span class="tipo-badge tipo-bolsa">Bolsa</span>' 
