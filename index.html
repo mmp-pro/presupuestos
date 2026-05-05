@@ -307,12 +307,13 @@
     }
 
     function actualizarTotales() {
-      document.getElementById('totalArticulos').textContent = articulos.length;
-      document.getElementById('totalPiezas').textContent = articulos.reduce((s, a) => s + a.piezasCompradas, 0);
-      document.getElementById('totalBolsas').textContent = articulos.filter(a => a.piezasPorBolsa > 0).length;
-      document.getElementById('inversionTotal').textContent = '$' + articulos.reduce((s, a) => s + a.precioCompra, 0).toFixed(2);
-    }
-
+       document.getElementById('totalArticulos').textContent = articulos.length;
+       document.getElementById('totalPiezas').textContent = articulos.reduce((s, a) => s + a.piezasCompradas, 0);
+       document.getElementById('totalBolsas').textContent = articulos.filter(a => a.piezasPorBolsa > 0).length;
+  
+  // ✅ CORRECTO: Suma el "Costo Total" de cada artículo (Piezas * Precio Compra)
+       document.getElementById('inversionTotal').textContent = '$' + articulos.reduce((s, a) => s + a.costoTotal, 0).toFixed(2);
+      }
     function sincronizarConSheets() {
       if (articulos.length === 0) return alert('⚠️ No hay datos para sincronizar');
       
