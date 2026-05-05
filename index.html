@@ -1,40 +1,185 @@
-function sincronizarConSheets() {
-  if (articulos.length === 0) {
-    alert('⚠️ No hay artículos para sincronizar');
-    return;
-  }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PresupuestoApp — Control de artículos</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; color: #333; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 24px; color: #2d3748; display: flex; align-items: center; gap: 10px; }
+    .btn-config { background: transparent; border: 2px solid #e2e8f0; color: #718096; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .config-section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; display: none; }
+    .config-section.active { display: block; }
+    .form-section { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 20px; }
+    @media (min-width: 768px) { .form-grid { grid-template-columns: repeat(5, 1fr); } }
+    .form-group label { font-weight: 600; margin-bottom: 5px; display: block; color: #4a5568; font-size: 14px; }
+    .form-group input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+    .form-group input:focus { outline: none; border-color: #667eea; }
+    .form-grid-bolsa { display: grid; grid-template-columns: 1fr; gap: 15px; padding-top: 20px; border-top: 2px dashed #e2e8f0; }
+    @media (min-width: 768px) { .form-grid-bolsa { grid-template-columns: repeat(4, 1fr) auto; } }
+    .section-label { grid-column: 1 / -1; color: #667eea; font-weight: bold; margin-bottom: 10px; }
+    .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; }
+    .btn-primary { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: white; }
+    .btn-success { background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%); color: white; }
+    .btn-danger { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%); color: white; }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+    @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+    .stat-card { background: white; padding: 20px; border-radius: 15px; text-align: center; }
+    .stat-card h4 { color: #718096; font-size: 12px; text-transform: uppercase; }
+    .stat-card .value { font-size: 28px; font-weight: bold; color: #2d3748; }
+    .table-section { background: white; padding: 20px; border-radius: 15px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    thead { background: #667eea; color: white; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+    .tipo-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .tipo-pieza { background: #c6f6d5; color: #22543d; }
+    .tipo-bolsa { background: #feebc8; color: #c05621; }
+    .delete-btn { background: #fc8181; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .actions button { flex: 1; min-width: 150px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 PresupuestoApp</h1>
+      <button class="btn-config" onclick="toggleConfig()">⚙️ Configurar</button>
+    </div>
 
-  const datos = {
-    articulos: articulos,
-    fecha: new Date().toLocaleDateString('es-ES')
-  };
+    <div class="config-section" id="configSection">
+      <label>URL del Apps Script:</label>
+      <input type="text" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
 
-  const btn = event.target;
-  const textoOriginal = btn.textContent;
-  btn.textContent = '⏳ Sincronizando...';
-  btn.disabled = true;
+    <div class="form-section">
+      <h3>Agregar artículo</h3>
+      <div class="form-grid">
+        <div class="form-group"><label>Artículo</label><input type="text" id="articuloNombre" placeholder="Ej. Tornillos"></div>
+        <div class="form-group"><label>Código/Copro</label><input type="text" id="articuloCopro" placeholder="Código"></div>
+        <div class="form-group"><label>Costo total ($)</label><input type="number" id="articuloCosto" step="0.01"></div>
+        <div class="form-group"><label>Piezas</label><input type="number" id="articuloPiezas" value="1"></div>
+        <div class="form-group"><label>Precio unitario</label><input type="text" id="articuloPrecioUnitario" readonly></div>
+      </div>
+      
+      <div class="form-grid-bolsa">
+        <div class="section-label">📦 Info Bolsa (Opcional)</div>
+        <div class="form-group"><label>Piezas por bolsa</label><input type="number" id="piezasPorBolsa"></div>
+        <div class="form-group"><label>Costo por bolsa ($)</label><input type="number" id="costoPorBolsa" step="0.01"></div>
+        <div class="form-group"><label>Costo/pieza (bolsa)</label><input type="text" id="costoPorPiezaBolsa" readonly></div>
+        <button class="btn btn-primary" onclick="agregarArticulo()">+ Agregar</button>
+      </div>
+    </div>
 
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {
-      'Content-Type': 'text/plain'
-    },
-    body: JSON.stringify(datos)
-  })
-  .then(() => {
-    // Con no-cors, si llega aquí sin error, se envió correctamente
-    setTimeout(() => {
-      alert('✅ Datos sincronizados correctamente con Google Sheets');
-      limpiarTodo();
-    }, 1500);
-  })
-  .catch(error => {
-    console.error('Error completo:', error);
-    alert('❌ Error al sincronizar. Verifica la consola para más detalles.');
-  })
-  .finally(() => {
-    btn.textContent = textoOriginal;
-    btn.disabled = false;
-  });
-}
+    <div class="stats-grid">
+      <div class="stat-card"><h4>Total Artículos</h4><div class="value" id="totalArticulos">0</div></div>
+      <div class="stat-card"><h4>Total Piezas</h4><div class="value" id="totalPiezas">0</div></div>
+      <div class="stat-card"><h4>Total Bolsas</h4><div class="value" id="totalBolsas">0</div></div>
+      <div class="stat-card"><h4>Inversión Total</h4><div class="value" id="inversionTotal">$0.00</div></div>
+    </div>
+
+    <div class="table-section">
+      <table>
+        <thead>
+          <tr><th>Código</th><th>Artículo</th><th>Costo</th><th>Piezas</th><th>P. Unitario</th><th>P/Bolsa</th><th>C/Pieza(B)</th><th>Tipo</th><th>Acción</th></tr>
+        </thead>
+        <tbody id="tablaArticulos">
+          <tr><td colspan="9" style="text-align:center">No hay artículos</td></tr>
+        </tbody>
+      </table>
+      <div class="actions">
+        <button class="btn btn-success" onclick="sincronizarConSheets()">📤 Sincronizar Sheets</button>
+        <button class="btn btn-danger" onclick="limpiarTodo()">🗑️ Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // URL FIJA - Asegúrate de que esta sea la correcta de tu despliegue
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwwW6JqaaOQfUjyOgaQMAVydCRQPFztaXFGrchNvr2LjZXGiLal8bXE5xnQ1mG_pPg/exec';
+    
+    let articulos = [];
+
+    function toggleConfig() { document.getElementById('configSection').classList.toggle('active'); }
+
+    ['articuloCosto', 'articuloPiezas', 'piezasPorBolsa', 'costoPorBolsa'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calcularPrecios);
+    });
+
+    function calcularPrecios() {
+      const costo = parseFloat(document.getElementById('articuloCosto').value) || 0;
+      const piezas = parseInt(document.getElementById('articuloPiezas').value) || 1;
+      document.getElementById('articuloPrecioUnitario').value = piezas > 0 ? '$' + (costo / piezas).toFixed(4) : '—';
+      
+      const pBolsa = parseInt(document.getElementById('piezasPorBolsa').value) || 0;
+      const cBolsa = parseFloat(document.getElementById('costoPorBolsa').value) || 0;
+      document.getElementById('costoPorPiezaBolsa').value = pBolsa > 0 ? '$' + (cBolsa / pBolsa).toFixed(4) : '—';
+    }
+
+    function agregarArticulo() {
+      const nombre = document.getElementById('articuloNombre').value.trim();
+      if (!nombre) return alert('Ingresa el nombre del artículo');
+
+      articulos.push({
+        nombre: nombre,
+        copro: document.getElementById('articuloCopro').value.trim() || 'N/A',
+        costoTotal: parseFloat(document.getElementById('articuloCosto').value) || 0,
+        piezas: parseInt(document.getElementById('articuloPiezas').value) || 1,
+        precioUnitario: parseFloat((document.getElementById('articuloCosto').value / document.getElementById('articuloPiezas').value).toFixed(4)) || 0,
+        piezasPorBolsa: parseInt(document.getElementById('piezasPorBolsa').value) || 0,
+        costoPorBolsa: parseFloat(document.getElementById('costoPorBolsa').value) || 0,
+        costoPorPiezaBolsa: parseFloat((document.getElementById('costoPorBolsa').value / document.getElementById('piezasPorBolsa').value).toFixed(4)) || 0
+      });
+
+      ['articuloNombre', 'articuloCopro', 'articuloCosto', 'articuloPiezas', 'piezasPorBolsa', 'costoPorBolsa'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('articuloPiezas').value = '1';
+      actualizarTabla();
+    }
+
+    function actualizarTabla() {
+      const tbody = document.getElementById('tablaArticulos');
+      if (articulos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center">No hay artículos</td></tr>';
+        return;
+      }
+      tbody.innerHTML = articulos.map((art, i) => `
+        <tr>
+          <td>${art.copro}</td><td>${art.nombre}</td><td>$${art.costoTotal.toFixed(2)}</td><td>${art.piezas}</td><td>$${art.precioUnitario.toFixed(4)}</td>
+          <td>${art.piezasPorBolsa || '—'}</td><td>${art.costoPorPiezaBolsa ? '$'+art.costoPorPiezaBolsa.toFixed(4) : '—'}</td>
+          <td><span class="tipo-badge ${art.piezasPorBolsa ? 'tipo-bolsa' : 'tipo-pieza'}">${art.piezasPorBolsa ? 'Bolsa' : 'Pieza'}</span></td>
+          <td><button class="delete-btn" onclick="eliminarArticulo(${i})">✕</button></td>
+        </tr>
+      `).join('');
+      actualizarTotales();
+    }
+
+    function eliminarArticulo(i) { articulos.splice(i, 1); actualizarTabla(); }
+
+    function actualizarTotales() {
+      document.getElementById('totalArticulos').textContent = articulos.length;
+      document.getElementById('totalPiezas').textContent = articulos.reduce((s, a) => s + a.piezas, 0);
+      document.getElementById('totalBolsas').textContent = articulos.filter(a => a.piezasPorBolsa > 0).length;
+      document.getElementById('inversionTotal').textContent = '$' + articulos.reduce((s, a) => s + a.costoTotal, 0).toFixed(2);
+    }
+
+    function sincronizarConSheets() {
+      if (articulos.length === 0) return alert('No hay datos');
+      const btn = event.target;
+      btn.textContent = '⏳ Enviando...'; btn.disabled = true;
+      
+      fetch(SCRIPT_URL, {
+        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ articulos: articulos, fecha: new Date().toLocaleDateString('es-ES') })
+      })
+      .then(() => { setTimeout(() => { alert('✅ Guardado en Sheets'); limpiarTodo(); }, 1000); })
+      .catch(e => alert('❌ Error: ' + e.message))
+      .finally(() => { btn.textContent = '📤 Sincronizar Sheets'; btn.disabled = false; });
+    }
+
+    function limpiarTodo() { if(confirm('¿Borrar todo?')) { articulos = []; actualizarTabla(); } }
+  </script>
+</body>
+</html>
