@@ -123,7 +123,8 @@
         </div>
         <div class="form-group">
           <label>Costo por bolsa ($)</label>
-          <input type="number" id="costoPorBolsa" step="0.01" placeholder="0.00">
+          <input type="text" id="costoPorBolsa" readonly placeholder="Igual a Precio Compra">
+          <small>Automático</small>
         </div>
         <div class="form-group">
           <label>Costo/pieza (bolsa)</label>
@@ -189,7 +190,7 @@
     document.getElementById('articuloPrecioCompra').addEventListener('input', calcularValores);
     document.getElementById('articuloPiezasCompradas').addEventListener('input', calcularValores);
     document.getElementById('piezasPorBolsa').addEventListener('input', calcularValores);
-    document.getElementById('costoPorBolsa').addEventListener('input', calcularValores);
+    // Eliminamos el evento de costoPorBolsa porque ahora es automático
 
     function calcularValores() {
       // 1. Piezas Totales Compradas = Piezas Compradas * Precio Compra
@@ -203,12 +204,14 @@
         document.getElementById('articuloPiezasTotales').value = '—';
       }
       
-      // 2. Costo por Pieza (Bolsa) = Costo por Bolsa / Piezas por Bolsa
+      // 2. Costo por bolsa ($) = Precio Compra (Automático)
+      document.getElementById('costoPorBolsa').value = precioCompra > 0 ? '$' + precioCompra.toFixed(2) : '—';
+
+      // 3. Costo por Pieza (Bolsa) = Costo por Bolsa / Piezas por Bolsa
       const pBolsa = parseInt(document.getElementById('piezasPorBolsa').value) || 0;
-      const cBolsa = parseFloat(document.getElementById('costoPorBolsa').value) || 0;
       
-      if (pBolsa > 0 && cBolsa > 0) {
-        const costoPorPiezaBolsa = (cBolsa / pBolsa).toFixed(4);
+      if (pBolsa > 0 && precioCompra > 0) {
+        const costoPorPiezaBolsa = (precioCompra / pBolsa).toFixed(4);
         document.getElementById('costoPorPiezaBolsa').value = '$' + costoPorPiezaBolsa;
       } else {
         document.getElementById('costoPorPiezaBolsa').value = '—';
@@ -223,7 +226,9 @@
       const precioCompra = parseFloat(document.getElementById('articuloPrecioCompra').value) || 0;
       const piezasCompradas = parseInt(document.getElementById('articuloPiezasCompradas').value) || 1;
       const pBolsa = parseInt(document.getElementById('piezasPorBolsa').value) || 0;
-      const cBolsa = parseFloat(document.getElementById('costoPorBolsa').value) || 0;
+      
+      // El costo por bolsa es igual al precio compra
+      const cBolsa = precioCompra; 
 
       // Guardamos los valores numéricos crudos para Sheets
       articulos.push({
@@ -238,9 +243,10 @@
       });
 
       // Limpiar inputs
-      ['articuloNombre', 'articuloCopro', 'articuloPrecioCompra', 'piezasPorBolsa', 'costoPorBolsa'].forEach(id => document.getElementById(id).value = '');
+      ['articuloNombre', 'articuloCopro', 'articuloPrecioCompra', 'piezasPorBolsa'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('articuloPiezasCompradas').value = '1';
       document.getElementById('articuloPiezasTotales').value = '';
+      document.getElementById('costoPorBolsa').value = '';
       document.getElementById('costoPorPiezaBolsa').value = '';
 
       actualizarTabla();
