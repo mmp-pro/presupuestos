@@ -33,7 +33,7 @@
 
     /* Sección Bolsa */
     .form-grid-bolsa { display: grid; grid-template-columns: 1fr; gap: 15px; padding-top: 20px; border-top: 2px dashed #e2e8f0; }
-    @media (min-width: 768px) { .form-grid-bolsa { grid-template-columns: repeat(4, 1fr) auto; } }
+    @media (min-width: 768px) { .form-grid-bolsa { grid-template-columns: repeat(5, 1fr); } }
     .section-label { grid-column: 1 / -1; color: #667eea; font-weight: bold; margin-bottom: 10px; font-size: 16px; }
 
     /* Botones y Stats */
@@ -55,7 +55,7 @@
     .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .badge { background: #667eea; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
     
-    table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
     thead { background: #667eea; color: white; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
     th { font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
@@ -108,8 +108,8 @@
           <input type="number" id="articuloPiezasCompradas" value="1" min="1">
         </div>
         <div class="form-group">
-          <label>Piezas Totales Compradas</label>
-          <input type="text" id="articuloPiezasTotales" readonly placeholder="—">
+          <label>Costo Total</label>
+          <input type="text" id="articuloCostoTotal" readonly placeholder="—">
           <small>Piezas × Precio Compra</small>
         </div>
       </div>
@@ -122,6 +122,11 @@
           <input type="number" id="piezasPorBolsa" placeholder="0">
         </div>
         <div class="form-group">
+          <label>Total de Piezas</label>
+          <input type="text" id="totalPiezasBolsa" readonly placeholder="—">
+          <small>Pzas Bolsa × Pzas Comp.</small>
+        </div>
+        <div class="form-group">
           <label>Costo por bolsa ($)</label>
           <input type="text" id="costoPorBolsa" readonly placeholder="Igual a Precio Compra">
           <small>Automático</small>
@@ -129,7 +134,7 @@
         <div class="form-group">
           <label>Costo/pieza (bolsa)</label>
           <input type="text" id="costoPorPiezaBolsa" readonly placeholder="—">
-          <small>Costo Bolsa ÷ Pzas Bolsa</small>
+          <small>Costo Bolsa ÷ Total Pzas</small>
         </div>
         <button class="btn btn-primary" onclick="agregarArticulo()">+ Agregar artículo</button>
       </div>
@@ -157,15 +162,16 @@
             <th>Artículo</th>
             <th>Precio Compra</th>
             <th>Piezas Comp.</th>
-            <th>Piezas Totales</th>
+            <th>Costo Total</th>
             <th>P/Bolsa</th>
+            <th>Total Pzas</th>
             <th>C/Pieza(B)</th>
             <th>Tipo</th>
             <th>Acción</th>
           </tr>
         </thead>
         <tbody id="tablaArticulos">
-          <tr><td colspan="9" style="text-align:center; padding: 20px; color:#999;">Agrega tu primer artículo para comenzar</td></tr>
+          <tr><td colspan="10" style="text-align:center; padding: 20px; color:#999;">Agrega tu primer artículo para comenzar</td></tr>
         </tbody>
       </table>
 
@@ -190,30 +196,38 @@
     document.getElementById('articuloPrecioCompra').addEventListener('input', calcularValores);
     document.getElementById('articuloPiezasCompradas').addEventListener('input', calcularValores);
     document.getElementById('piezasPorBolsa').addEventListener('input', calcularValores);
-    // Eliminamos el evento de costoPorBolsa porque ahora es automático
 
     function calcularValores() {
-      // 1. Piezas Totales Compradas = Piezas Compradas * Precio Compra
+      // 1. Costo Total = Piezas Compradas * Precio Compra
       const precioCompra = parseFloat(document.getElementById('articuloPrecioCompra').value) || 0;
       const piezasCompradas = parseInt(document.getElementById('articuloPiezasCompradas').value) || 1;
       
       if (piezasCompradas > 0 && precioCompra > 0) {
-        const totalCalculado = (piezasCompradas * precioCompra).toFixed(2);
-        document.getElementById('articuloPiezasTotales').value = '$' + totalCalculado;
+        const costoTotal = (piezasCompradas * precioCompra).toFixed(2);
+        document.getElementById('articuloCostoTotal').value = '$' + costoTotal;
       } else {
-        document.getElementById('articuloPiezasTotales').value = '—';
+        document.getElementById('articuloCostoTotal').value = '—';
       }
       
       // 2. Costo por bolsa ($) = Precio Compra (Automático)
       document.getElementById('costoPorBolsa').value = precioCompra > 0 ? '$' + precioCompra.toFixed(2) : '—';
 
-      // 3. Costo por Pieza (Bolsa) = Costo por Bolsa / Piezas por Bolsa
+      // 3. Total de Piezas = Piezas por Bolsa * Piezas Compradas
       const pBolsa = parseInt(document.getElementById('piezasPorBolsa').value) || 0;
       
-      if (pBolsa > 0 && precioCompra > 0) {
-        const costoPorPiezaBolsa = (precioCompra / pBolsa).toFixed(4);
-        document.getElementById('costoPorPiezaBolsa').value = '$' + costoPorPiezaBolsa;
+      if (pBolsa > 0 && piezasCompradas > 0) {
+        const totalPzasBolsa = pBolsa * piezasCompradas;
+        document.getElementById('totalPiezasBolsa').value = totalPzasBolsa;
+        
+        // 4. Costo por Pieza (Bolsa) = Costo por Bolsa / Total de Piezas
+        if (precioCompra > 0) {
+          const costoPorPiezaBolsa = (precioCompra / totalPzasBolsa).toFixed(4);
+          document.getElementById('costoPorPiezaBolsa').value = '$' + costoPorPiezaBolsa;
+        } else {
+          document.getElementById('costoPorPiezaBolsa').value = '—';
+        }
       } else {
+        document.getElementById('totalPiezasBolsa').value = '—';
         document.getElementById('costoPorPiezaBolsa').value = '—';
       }
     }
@@ -229,6 +243,8 @@
       
       // El costo por bolsa es igual al precio compra
       const cBolsa = precioCompra; 
+      // Total de piezas en bolsa
+      const totalPzasBolsa = pBolsa > 0 ? (pBolsa * piezasCompradas) : 0;
 
       // Guardamos los valores numéricos crudos para Sheets
       articulos.push({
@@ -236,16 +252,18 @@
         copro: copro,
         precioCompra: precioCompra,
         piezasCompradas: piezasCompradas,
-        piezasTotales: parseFloat((piezasCompradas * precioCompra).toFixed(2)) || 0,
+        costoTotal: parseFloat((piezasCompradas * precioCompra).toFixed(2)) || 0,
         piezasPorBolsa: pBolsa,
+        totalPiezasBolsa: totalPzasBolsa,
         costoPorBolsa: cBolsa,
-        costoPorPiezaBolsa: parseFloat((cBolsa / pBolsa).toFixed(4)) || 0
+        costoPorPiezaBolsa: totalPzasBolsa > 0 ? parseFloat((cBolsa / totalPzasBolsa).toFixed(4)) : 0
       });
 
       // Limpiar inputs
       ['articuloNombre', 'articuloCopro', 'articuloPrecioCompra', 'piezasPorBolsa'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('articuloPiezasCompradas').value = '1';
-      document.getElementById('articuloPiezasTotales').value = '';
+      document.getElementById('articuloCostoTotal').value = '';
+      document.getElementById('totalPiezasBolsa').value = '';
       document.getElementById('costoPorBolsa').value = '';
       document.getElementById('costoPorPiezaBolsa').value = '';
 
@@ -256,7 +274,7 @@
     function actualizarTabla() {
       const tbody = document.getElementById('tablaArticulos');
       if (articulos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px; color:#999;">Agrega tu primer artículo para comenzar</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding: 20px; color:#999;">Agrega tu primer artículo para comenzar</td></tr>';
         document.getElementById('contadorArticulos').textContent = '0 artículos';
         actualizarTotales();
         return;
@@ -268,8 +286,9 @@
           <td>${art.nombre}</td>
           <td>$${art.precioCompra.toFixed(2)}</td>
           <td>${art.piezasCompradas}</td>
-          <td>$${art.piezasTotales.toFixed(2)}</td>
+          <td>$${art.costoTotal.toFixed(2)}</td>
           <td>${art.piezasPorBolsa || '—'}</td>
+          <td>${art.totalPiezasBolsa || '—'}</td>
           <td>${art.costoPorPiezaBolsa ? '$'+art.costoPorPiezaBolsa.toFixed(4) : '—'}</td>
           <td><span class="tipo-badge ${art.piezasPorBolsa ? 'tipo-bolsa' : 'tipo-pieza'}">${art.piezasPorBolsa ? 'Bolsa' : 'Pieza'}</span></td>
           <td><button class="delete-btn" onclick="eliminarArticulo(${i})">✕</button></td>
