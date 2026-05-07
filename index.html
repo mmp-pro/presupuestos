@@ -28,8 +28,10 @@
     .form-group input[readonly] { background: #f7fafc; color: #718096; font-weight: bold; }
     .form-group small { color: #a0aec0; font-size: 11px; margin-top: 4px; display: block; }
 
+    /* Se simplifica la grilla de bolsa ya que omitimos C/Pieza(B) */
     .form-grid-bolsa { display: grid; grid-template-columns: 1fr; gap: 15px; padding-top: 20px; border-top: 2px dashed #e2e8f0; }
-    @media (min-width: 768px) { .form-grid-bolsa { grid-template-columns: repeat(5, 1fr); } }
+    @media (min-width: 768px) { .form-grid-bolsa { grid-template-columns: repeat(3, 1fr) auto; } } /* Ajustado para 3 inputs + botón */
+    
     .section-label { grid-column: 1 / -1; color: #667eea; font-weight: bold; margin-bottom: 10px; font-size: 16px; }
 
     .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; transition: transform 0.2s; }
@@ -49,14 +51,10 @@
     .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .badge { background: #667eea; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
     
-    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
     thead { background: #667eea; color: white; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
     th { font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
-    
-    .tipo-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
-    .tipo-pieza { background: #c6f6d5; color: #22543d; }
-    .tipo-bolsa { background: #feebc8; color: #c05621; }
     
     .delete-btn { background: #fc8181; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
     .delete-btn:hover { background: #f56565; }
@@ -104,6 +102,7 @@
         </div>
       </div>
 
+      <!-- Sección Bolsa Simplificada (Sin C/Pieza B) -->
       <div class="form-grid-bolsa">
         <div class="section-label">📦 Información de Bolsa/Paquete (Opcional)</div>
         <div class="form-group">
@@ -120,11 +119,7 @@
           <input type="text" id="costoPorBolsa" readonly placeholder="Igual a Precio Compra">
           <small>Automático</small>
         </div>
-        <div class="form-group">
-          <label>Costo/pieza (bolsa)</label>
-          <input type="text" id="costoPorPiezaBolsa" readonly placeholder="—">
-          <small>Costo Bolsa ÷ Total Pzas</small>
-        </div>
+        <!-- Eliminamos el input de Costo/pieza(bolsa) -->
         <button class="btn btn-primary" onclick="agregarArticulo()">+ Agregar artículo</button>
       </div>
     </div>
@@ -152,9 +147,9 @@
             <th>Costo Total</th>
             <th>P/Bolsa</th>
             <th>Total Pzas</th>
-            <th>C/Pieza(B)</th>
-            <th>Tipo</th>
-            <th>Acción</th>
+            <th>Costo unit.</th> <!-- Renombrado de Tipo -->
+            <th>Fecha de ingreso</th> <!-- Renombrado de Acción -->
+            <th>Acción</th> <!-- Mantenemos una columna extra para el botón de borrar localmente -->
           </tr>
         </thead>
         <tbody id="tablaArticulos">
@@ -170,8 +165,8 @@
   </div>
 
   <script>
-    // URL FIJA DEL APPS SCRIPT - Asegúrate de que esta sea la correcta
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2Ia1ep3LtJmLWZu2lxaVg0sIGMZ2wkBaIxOTh38G-_dJbTChpoOPFF2b_MBeTrTw6/exec';
+    // URL FIJA DEL APPS SCRIPT
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwwW6JqaaOQfUjyOgaQMAVydCRQPFztaXFGrchNvr2LjZXGiLal8bXE5xnQ1mG_pPg/exec';
     
     let articulos = [];
 
@@ -201,16 +196,8 @@
       if (pBolsa > 0 && piezasCompradas > 0) {
         const totalPzasBolsa = pBolsa * piezasCompradas;
         document.getElementById('totalPiezasBolsa').value = totalPzasBolsa;
-        
-        if (precioCompra > 0) {
-          const costoPorPiezaBolsa = (precioCompra / totalPzasBolsa).toFixed(4);
-          document.getElementById('costoPorPiezaBolsa').value = '$' + costoPorPiezaBolsa;
-        } else {
-          document.getElementById('costoPorPiezaBolsa').value = '—';
-        }
       } else {
         document.getElementById('totalPiezasBolsa').value = '—';
-        document.getElementById('costoPorPiezaBolsa').value = '—';
       }
     }
 
@@ -224,6 +211,11 @@
       const pBolsa = parseInt(document.getElementById('piezasPorBolsa').value) || 0;
       const cBolsa = precioCompra; 
       const totalPzasBolsa = pBolsa > 0 ? (pBolsa * piezasCompradas) : 0;
+      
+      // Calculamos el Costo Unitario (Precio Compra / Piezas Compradas) para mostrarlo en la columna "Costo unit."
+      const costoUnitario = piezasCompradas > 0 ? (precioCompra / piezasCompradas).toFixed(4) : 0;
+
+      const fechaHoy = new Date().toLocaleDateString('es-ES');
 
       articulos.push({
         nombre: nombre,
@@ -234,7 +226,8 @@
         piezasPorBolsa: pBolsa,
         totalPiezasBolsa: totalPzasBolsa,
         costoPorBolsa: cBolsa,
-        costoPorPiezaBolsa: totalPzasBolsa > 0 ? parseFloat((cBolsa / totalPzasBolsa).toFixed(4)) : 0
+        costoUnitario: parseFloat(costoUnitario), // Nuevo campo para la columna renombrada
+        fechaIngreso: fechaHoy // Nuevo campo para la columna renombrada
       });
 
       ['articuloNombre', 'articuloCopro', 'articuloPrecioCompra', 'piezasPorBolsa'].forEach(id => document.getElementById(id).value = '');
@@ -242,7 +235,6 @@
       document.getElementById('articuloCostoTotal').value = '';
       document.getElementById('totalPiezasBolsa').value = '';
       document.getElementById('costoPorBolsa').value = '';
-      document.getElementById('costoPorPiezaBolsa').value = '';
 
       actualizarTabla();
       document.getElementById('articuloNombre').focus();
@@ -266,8 +258,8 @@
           <td>$${art.costoTotal.toFixed(2)}</td>
           <td>${art.piezasPorBolsa || '—'}</td>
           <td>${art.totalPiezasBolsa || '—'}</td>
-          <td>${art.costoPorPiezaBolsa ? '$'+art.costoPorPiezaBolsa.toFixed(4) : '—'}</td>
-          <td><span class="tipo-badge ${art.piezasPorBolsa ? 'tipo-bolsa' : 'tipo-pieza'}">${art.piezasPorBolsa ? 'Bolsa' : 'Pieza'}</span></td>
+          <td>$${art.costoUnitario.toFixed(4)}</td> <!-- Columna Costo unit. -->
+          <td>${art.fechaIngreso}</td> <!-- Columna Fecha de ingreso -->
           <td><button class="delete-btn" onclick="eliminarArticulo(${i})">✕</button></td>
         </tr>
       `).join('');
@@ -287,7 +279,6 @@
       document.getElementById('totalArticulos').textContent = articulos.length;
       document.getElementById('totalPiezas').textContent = articulos.reduce((s, a) => s + a.piezasCompradas, 0);
       document.getElementById('totalBolsas').textContent = articulos.filter(a => a.piezasPorBolsa > 0).length;
-      // ✅ CORREGIDO: Ahora suma el costoTotal de cada artículo
       document.getElementById('inversionTotal').textContent = '$' + articulos.reduce((s, a) => s + a.costoTotal, 0).toFixed(2);
     }
 
@@ -303,7 +294,7 @@
         method: 'POST', 
         mode: 'no-cors', 
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ articulos: articulos, fecha: new Date().toLocaleDateString('es-ES') })
+        body: JSON.stringify({ articulos: articulos }) // La fecha se maneja en el script o aquí
       })
       .then(() => { 
         setTimeout(() => { 
