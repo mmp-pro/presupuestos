@@ -28,10 +28,8 @@
     .form-group input[readonly] { background: #f7fafc; color: #718096; font-weight: bold; }
     .form-group small { color: #a0aec0; font-size: 11px; margin-top: 4px; display: block; }
 
-    /* Se simplifica la grilla de bolsa ya que omitimos C/Pieza(B) */
     .form-grid-bolsa { display: grid; grid-template-columns: 1fr; gap: 15px; padding-top: 20px; border-top: 2px dashed #e2e8f0; }
-    @media (min-width: 768px) { .form-grid-bolsa { grid-template-columns: repeat(3, 1fr) auto; } } /* Ajustado para 3 inputs + botón */
-    
+    @media (min-width: 768px) { .form-grid-bolsa { grid-template-columns: repeat(3, 1fr) auto; } }
     .section-label { grid-column: 1 / -1; color: #667eea; font-weight: bold; margin-bottom: 10px; font-size: 16px; }
 
     .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; transition: transform 0.2s; }
@@ -102,7 +100,6 @@
         </div>
       </div>
 
-      <!-- Sección Bolsa Simplificada (Sin C/Pieza B) -->
       <div class="form-grid-bolsa">
         <div class="section-label">📦 Información de Bolsa/Paquete (Opcional)</div>
         <div class="form-group">
@@ -119,7 +116,6 @@
           <input type="text" id="costoPorBolsa" readonly placeholder="Igual a Precio Compra">
           <small>Automático</small>
         </div>
-        <!-- Eliminamos el input de Costo/pieza(bolsa) -->
         <button class="btn btn-primary" onclick="agregarArticulo()">+ Agregar artículo</button>
       </div>
     </div>
@@ -147,13 +143,12 @@
             <th>Costo Total</th>
             <th>P/Bolsa</th>
             <th>Total Pzas</th>
-            <th>Costo unit.</th> <!-- Renombrado de Tipo -->
-            <th>Fecha de ingreso</th> <!-- Renombrado de Acción -->
-            <th>Acción</th> <!-- Mantenemos una columna extra para el botón de borrar localmente -->
+            <th>Costo unit.</th>
+            <th>Acción</th> <!-- Columna final para el botón de eliminar -->
           </tr>
         </thead>
         <tbody id="tablaArticulos">
-          <tr><td colspan="10" style="text-align:center; padding: 20px; color:#999;">Agrega tu primer artículo para comenzar</td></tr>
+          <tr><td colspan="9" style="text-align:center; padding: 20px; color:#999;">Agrega tu primer artículo para comenzar</td></tr>
         </tbody>
       </table>
 
@@ -165,7 +160,6 @@
   </div>
 
   <script>
-    // URL FIJA DEL APPS SCRIPT
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2Ia1ep3LtJmLWZu2lxaVg0sIGMZ2wkBaIxOTh38G-_dJbTChpoOPFF2b_MBeTrTw6/exec';
     
     let articulos = [];
@@ -211,11 +205,7 @@
       const pBolsa = parseInt(document.getElementById('piezasPorBolsa').value) || 0;
       const cBolsa = precioCompra; 
       const totalPzasBolsa = pBolsa > 0 ? (pBolsa * piezasCompradas) : 0;
-      
-      // Calculamos el Costo Unitario (Precio Compra / Piezas Compradas) para mostrarlo en la columna "Costo unit."
       const costoUnitario = piezasCompradas > 0 ? (precioCompra / piezasCompradas).toFixed(4) : 0;
-
-      const fechaHoy = new Date().toLocaleDateString('es-ES');
 
       articulos.push({
         nombre: nombre,
@@ -226,8 +216,8 @@
         piezasPorBolsa: pBolsa,
         totalPiezasBolsa: totalPzasBolsa,
         costoPorBolsa: cBolsa,
-        costoUnitario: parseFloat(costoUnitario), // Nuevo campo para la columna renombrada
-        fechaIngreso: fechaHoy // Nuevo campo para la columna renombrada
+        costoUnitario: parseFloat(costoUnitario)
+        // Eliminamos fechaIngreso
       });
 
       ['articuloNombre', 'articuloCopro', 'articuloPrecioCompra', 'piezasPorBolsa'].forEach(id => document.getElementById(id).value = '');
@@ -243,7 +233,7 @@
     function actualizarTabla() {
       const tbody = document.getElementById('tablaArticulos');
       if (articulos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding: 20px; color:#999;">Agrega tu primer artículo para comenzar</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px; color:#999;">Agrega tu primer artículo para comenzar</td></tr>';
         document.getElementById('contadorArticulos').textContent = '0 artículos';
         actualizarTotales();
         return;
@@ -258,8 +248,7 @@
           <td>$${art.costoTotal.toFixed(2)}</td>
           <td>${art.piezasPorBolsa || '—'}</td>
           <td>${art.totalPiezasBolsa || '—'}</td>
-          <td>$${art.costoUnitario.toFixed(4)}</td> <!-- Columna Costo unit. -->
-          <td>${art.fechaIngreso}</td> <!-- Columna Fecha de ingreso -->
+          <td>$${art.costoUnitario.toFixed(4)}</td>
           <td><button class="delete-btn" onclick="eliminarArticulo(${i})">✕</button></td>
         </tr>
       `).join('');
@@ -294,7 +283,7 @@
         method: 'POST', 
         mode: 'no-cors', 
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ articulos: articulos }) // La fecha se maneja en el script o aquí
+        body: JSON.stringify({ articulos: articulos })
       })
       .then(() => { 
         setTimeout(() => { 
