@@ -677,7 +677,7 @@ async function sincronizarConSheets() {
     const res    = await fetch(getURL);
     const txt    = await res.text();
 
-    if (txt.includes('OK')) {
+    if (txt.startsWith('OK')) {
       alert('✅ Datos sincronizados correctamente con Google Sheets');
       limpiarTodo();
     } else {
